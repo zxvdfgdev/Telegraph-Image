@@ -36,7 +36,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: var(--text-color);
             margin: 0;
             overflow-x: hidden;
@@ -158,14 +158,14 @@
                 <div class="w-full bg-black/5 dark:bg-white/5 rounded-full h-1 mb-2 overflow-hidden">
                     <div id="progressBar" class="bg-current opacity-40 h-full transition-all duration-300" style="width: 0%"></div>
                 </div>
-                <p id="statusText" class="text-[10px] uppercase tracking-widest opacity-40">准备就绪</p>
+                <p id="statusText" class="text-xs opacity-40">准备就绪</p>
             </div>
 
             <div id="resultContainer" class="mt-8 space-y-3"></div>
         </div>
     </main>
 
-    <footer class="fixed bottom-6 left-6 opacity-20 text-[10px] uppercase tracking-[0.2em] font-light">
+    <footer class="fixed bottom-6 left-6 opacity-20 text-sm font-light">
         基于 Telegram 的文件托管服务
     </footer>
 
@@ -234,7 +234,7 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const progress = ((i + 1) / files.length) * 100;
-                statusText.innerText = `Uploading: ${file.name}`;
+                statusText.innerText = `正在上传: ${file.name}`;
                 progressBar.style.width = `${progress}%`;
 
                 try {
@@ -246,13 +246,13 @@
                         const url = window.location.origin + data[0].src;
                         addResult(url);
                     } else {
-                        addError(`Error: ${file.name}`);
+                        addError(`上传失败: ${file.name}`);
                     }
                 } catch (error) {
-                    addError(`Network Error`);
+                    addError(`网络错误`);
                 }
             }
-            statusText.innerText = 'Complete';
+            statusText.innerText = '上传完成';
             setTimeout(() => status.classList.add('hidden'), 2000);
         }
 
@@ -262,16 +262,16 @@
             div.innerHTML = `
                 <img src="${url}" class="w-12 h-12 object-cover rounded-md border border-white/5 cursor-zoom-in hover:brightness-110 transition-all" onclick="previewImage('${url}')" />
                 <div class="flex-1 w-full overflow-hidden">
-                    <input type="text" readonly value="${url}" class="w-full bg-black/5 dark:bg-black/40 border border-white/5 rounded px-3 py-2 text-[10px] focus:outline-none opacity-70" onclick="this.select()" />
+                    <input type="text" readonly value="${url}" class="w-full bg-black/5 dark:bg-black/40 border border-white/5 rounded px-3 py-2 text-xs focus:outline-none opacity-70" onclick="this.select()" />
                 </div>
-                <button onclick="copyToClipboard('${url}', this)" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-1.5 rounded-md text-[10px] transition-all border border-black/5 dark:border-white/5 uppercase tracking-wider font-medium">Copy</button>
+                <button onclick="copyToClipboard('${url}', this)" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-1.5 rounded-md text-sm transition-all border border-black/5 dark:border-white/5 font-medium">复制</button>
             `;
             resultContainer.prepend(div);
         }
 
         function addError(msg) {
             const div = document.createElement('div');
-            div.className = 'result-card bg-black/10 dark:bg-white/5 border border-white/5 p-3 rounded-lg text-[10px] opacity-60 text-center uppercase tracking-widest';
+            div.className = 'result-card bg-black/10 dark:bg-white/5 border border-white/5 p-3 rounded-lg text-xs opacity-60 text-center';
             div.innerText = msg;
             resultContainer.prepend(div);
         }
@@ -284,7 +284,7 @@
             document.execCommand('copy');
             document.body.removeChild(el);
             const originalText = btn.innerText;
-            btn.innerText = 'Copied';
+            btn.innerText = '已复制';
             setTimeout(() => btn.innerText = originalText, 1500);
         }
     </script>
