@@ -7,14 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+            --bg-gradient: linear-gradient(-45deg, #f3f4f6, #e5e7eb, #d1d5db, #f9fafb);
+            --text-color: rgba(0, 0, 0, 0.8);
+            --upload-dash: rgba(0, 0, 0, 0.15);
+            --accent-color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* 深色模式变量 - 全部改为单色 */
+        .dark {
             --glass-bg: rgba(0, 0, 0, 0.3);
             --glass-border: rgba(255, 255, 255, 0.1);
             --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            --bg-gradient: linear-gradient(-45deg, #000000, #1a1a1a, #2d2d2d, #0f0f0f);
+            --text-color: rgba(255, 255, 255, 0.9);
+            --upload-dash: rgba(255, 255, 255, 0.1);
+            --accent-color: rgba(255, 255, 255, 0.6);
         }
 
         body {
-            /* 渐变背景修改为黑灰色系 */
-            background: linear-gradient(-45deg, #000000, #1a1a1a, #2d2d2d, #0f0f0f);
+            background: var(--bg-gradient);
             background-size: 400% 400%;
             animation: gradient 15s ease infinite;
             min-height: 100vh;
@@ -23,9 +37,10 @@
             align-items: center;
             justify-content: center;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--text-color);
             margin: 0;
             overflow-x: hidden;
+            transition: color 0.3s ease, background 0.5s ease;
         }
 
         @keyframes gradient {
@@ -45,12 +60,13 @@
 
         #upload-area {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-color: var(--upload-dash);
         }
 
         #upload-area.dragover {
-            background: rgba(255, 255, 255, 0.05);
-            transform: scale(1.02);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(128, 128, 128, 0.05);
+            transform: scale(1.01);
+            border-color: var(--accent-color);
         }
 
         .result-card {
@@ -58,53 +74,98 @@
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        input::placeholder { color: rgba(255,255,255,0.4); }
-        
         #fileInput { display: none; }
 
-        /* 滚动条美化 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        /* 全屏预览层 */
+        #imageOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            cursor: zoom-out;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(12px);
+        }
+        #imageOverlay img {
+            max-width: 92%;
+            max-height: 92%;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* 模式切换按钮 - 移除彩色 */
+        #themeToggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            padding: 0.6rem;
+            border-radius: 9999px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 50;
+            opacity: 0.6;
+        }
+        #themeToggle:hover { 
+            transform: scale(1.05); 
+            opacity: 1;
+            background: rgba(128, 128, 128, 0.1);
+        }
     </style>
 </head>
 <body>
 
+    <!-- 单色模式切换按钮 -->
+    <button id="themeToggle" title="切换模式">
+        <svg id="sunIcon" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moonIcon" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
+    <!-- 图片大图预览 -->
+    <div id="imageOverlay" onclick="this.style.display='none'">
+        <img id="overlayImg" src="" alt="预览">
+    </div>
+
     <main class="w-full max-w-2xl px-4 py-8">
         <div class="liquid-glass p-8 md:p-12 text-center">
-            <h1 class="text-3xl font-bold mb-6 tracking-tight text-white/90">文件上传</h1>
+            <h1 class="text-2xl font-semibold mb-8 tracking-tight opacity-90">文件上传</h1>
             
-            <!-- 上传区域 -->
-            <div id="upload-area" class="border-2 border-dashed border-white/10 rounded-xl p-10 cursor-pointer hover:border-white/20">
+            <div id="upload-area" class="border-2 border-dashed rounded-xl p-12 cursor-pointer group">
                 <div class="flex flex-col items-center">
-                    <svg class="w-16 h-16 mb-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <svg class="w-12 h-12 mb-4 opacity-20 group-hover:opacity-40 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <p class="text-lg font-medium text-white/80">点击或拖拽文件至此</p>
-                    <p class="text-sm text-white/40 mt-2">支持单次上传多张图片</p>
+                    <p class="text-base font-normal opacity-60">点击或拖拽文件至此</p>
+                    <p class="text-xs opacity-30 mt-2 font-light">支持单次上传多张图片</p>
                 </div>
             </div>
             <input type="file" id="fileInput" multiple accept="image/*">
 
-            <!-- 进度与状态 -->
-            <div id="status" class="mt-6 hidden">
-                <div class="w-full bg-white/5 rounded-full h-1.5 mb-2">
-                    <div id="progressBar" class="bg-white/60 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div id="status" class="mt-8 hidden">
+                <div class="w-full bg-black/5 dark:bg-white/5 rounded-full h-1 mb-2 overflow-hidden">
+                    <div id="progressBar" class="bg-current opacity-40 h-full transition-all duration-300" style="width: 0%"></div>
                 </div>
-                <p id="statusText" class="text-xs text-white/50">准备就绪</p>
+                <p id="statusText" class="text-[10px] uppercase tracking-widest opacity-40">准备就绪</p>
             </div>
 
-            <!-- 结果展示 -->
-            <div id="resultContainer" class="mt-8 space-y-4"></div>
+            <div id="resultContainer" class="mt-8 space-y-3"></div>
         </div>
     </main>
 
-    <!-- 页脚文案 -->
-    <footer class="fixed bottom-6 left-6 text-white/30 text-sm font-light">
+    <footer class="fixed bottom-6 left-6 opacity-20 text-[10px] uppercase tracking-[0.2em] font-light">
         基于 Telegram 的文件托管服务
     </footer>
 
@@ -115,13 +176,48 @@
         const progressBar = document.getElementById('progressBar');
         const statusText = document.getElementById('statusText');
         const resultContainer = document.getElementById('resultContainer');
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const imageOverlay = document.getElementById('imageOverlay');
+        const overlayImg = document.getElementById('overlayImg');
+
+        // 主题管理
+        function updateIcons(isDark) {
+            if (isDark) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        function initTheme() {
+            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateIcons(isDark);
+        }
+        initTheme();
+
+        themeToggle.onclick = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            updateIcons(isDark);
+        };
+
+        // 图片放大
+        function previewImage(url) {
+            overlayImg.src = url;
+            imageOverlay.style.display = 'flex';
+        }
 
         uploadArea.onclick = () => fileInput.click();
-
-        uploadArea.ondragover = (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        };
+        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); };
         uploadArea.ondragleave = () => uploadArea.classList.remove('dragover');
         uploadArea.ondrop = (e) => {
             e.preventDefault();
@@ -133,60 +229,51 @@
 
         async function handleFiles(files) {
             if (files.length === 0) return;
-            
             status.classList.remove('hidden');
-            resultContainer.innerHTML = '';
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const progress = ((i + 1) / files.length) * 100;
-                
-                statusText.innerText = `正在上传: ${file.name} (${i + 1}/${files.length})`;
+                statusText.innerText = `Uploading: ${file.name}`;
                 progressBar.style.width = `${progress}%`;
 
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
-
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-
+                    const response = await fetch('/upload', { method: 'POST', body: formData });
                     if (response.ok) {
                         const data = await response.json();
                         const url = window.location.origin + data[0].src;
                         addResult(url);
                     } else {
-                        addError(`上传失败: ${file.name}`);
+                        addError(`Error: ${file.name}`);
                     }
                 } catch (error) {
-                    addError(`网络错误: ${file.name}`);
+                    addError(`Network Error`);
                 }
             }
-            
-            statusText.innerText = '上传完成';
+            statusText.innerText = 'Complete';
             setTimeout(() => status.classList.add('hidden'), 2000);
         }
 
         function addResult(url) {
             const div = document.createElement('div');
-            div.className = 'result-card liquid-glass p-4 flex flex-col md:flex-row items-center gap-4 text-left';
+            div.className = 'result-card liquid-glass p-3 flex flex-col md:flex-row items-center gap-4 text-left';
             div.innerHTML = `
-                <img src="${url}" class="w-16 h-16 object-cover rounded-lg border border-white/10" />
+                <img src="${url}" class="w-12 h-12 object-cover rounded-md border border-white/5 cursor-zoom-in hover:brightness-110 transition-all" onclick="previewImage('${url}')" />
                 <div class="flex-1 w-full overflow-hidden">
-                    <input type="text" readonly value="${url}" class="w-full bg-black/40 border border-white/5 rounded px-3 py-1.5 text-xs text-white/80 focus:outline-none" onclick="this.select()" />
+                    <input type="text" readonly value="${url}" class="w-full bg-black/5 dark:bg-black/40 border border-white/5 rounded px-3 py-2 text-[10px] focus:outline-none opacity-70" onclick="this.select()" />
                 </div>
-                <button onclick="copyToClipboard('${url}', this)" class="bg-white/10 hover:bg-white/20 text-white px-5 py-1.5 rounded-lg text-sm transition-all border border-white/10">复制</button>
+                <button onclick="copyToClipboard('${url}', this)" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-1.5 rounded-md text-[10px] transition-all border border-black/5 dark:border-white/5 uppercase tracking-wider font-medium">Copy</button>
             `;
-            resultContainer.appendChild(div);
+            resultContainer.prepend(div);
         }
 
         function addError(msg) {
             const div = document.createElement('div');
-            div.className = 'result-card bg-red-900/20 border border-red-500/30 p-3 rounded-lg text-xs text-red-200';
+            div.className = 'result-card bg-black/10 dark:bg-white/5 border border-white/5 p-3 rounded-lg text-[10px] opacity-60 text-center uppercase tracking-widest';
             div.innerText = msg;
-            resultContainer.appendChild(div);
+            resultContainer.prepend(div);
         }
 
         function copyToClipboard(text, btn) {
@@ -196,14 +283,9 @@
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            
             const originalText = btn.innerText;
-            btn.innerText = '已复制';
-            btn.style.borderColor = 'rgba(255,255,255,0.4)';
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.borderColor = 'rgba(255,255,255,0.1)';
-            }, 1500);
+            btn.innerText = 'Copied';
+            setTimeout(() => btn.innerText = originalText, 1500);
         }
     </script>
 </body>
